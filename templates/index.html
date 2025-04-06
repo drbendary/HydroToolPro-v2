@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>HydroToolPro – NPH Diagnosis</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            padding: 2em;
+            max-width: 700px;
+            margin: auto;
+            background-color: #8195aa;
+            background-image: url('/static/images/nph_brain.png');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            color: #a1b5db;
+        }
+
+        h1 {
+            text-align: center;
+            color: #a3abb8;
+            font-size: 2em;
+            margin-bottom: 1em;
+        }
+
+        h2 {
+            margin-top: 2em;
+            color: #0a2c64;
+        }
+
+        .section-title {
+            margin-top: 2em;
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #0066cc;
+            border-bottom: 2px solid #cce0ff;
+            padding-bottom: 4px;
+        }
+
+        form {
+            background-color: rgba(255, 255, 255, 0.75);
+            padding: 1.5em;
+            border-radius: 12px;
+            box-shadow: 0 0 8px rgba(0, 0, 0, 0.05);
+        }
+
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 1em;
+        }
+
+        .tooltip {
+            font-weight: normal;
+            font-size: 0.9em;
+            color: #555;
+            margin-top: 2px;
+            margin-bottom: 5px;
+        }
+
+        select,
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            margin-top: 2em;
+            padding: 12px;
+            width: 100%;
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            font-weight: bold;
+            font-size: 1em;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #004a99;
+        }
+
+        .result {
+            margin-top: 2em;
+            padding: 1em;
+            background-color: #e6f0ff;
+            border-left: 6px solid #0066cc;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🧠 HydroToolPro v2+</h1>
+    <form method="POST">
+
+        <div class="section-title">🩺 Clinical Assessment</div>
+
+        <label>Gait disturbance?
+            <div class="tooltip">Classic magnetic gait is a hallmark of NPH.</div>
+        </label>
+        <select name="gait">
+            <option value="" disabled selected>Select an option</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+        </select>
+
+        <label>Urinary incontinence?
+            <div class="tooltip">Urgency or urge incontinence especially in older adults.</div>
+        </label>
+        <select name="urine">
+            <option value="" disabled selected>Select an option</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+        </select>
+
+        <label>Cognitive decline?
+            <div class="tooltip">Slow thought, apathy, or forgetfulness.</div>
+        </label>
+        <select name="cognition">
+            <option value="" disabled selected>Select an option</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+        </select>
+
+        <label>TUG test > 20 sec?
+            <div class="tooltip">Functional mobility — more than 20 seconds is considered impaired.</div>
+        </label>
+        <select name="tug">
+            <option value="" disabled selected>Select an option</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+        </select>
+
+        <label>Positive response to CSF tap test?
+            <div class="tooltip">Improvement in walking or cognition after LP.</div>
+        </label>
+        <select name="tap">
+            <option value="" disabled selected>Select an option</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+        </select>
+
+        <div class="section-title">🧲 Imaging Findings</div>
+
+        <label>Evans Index ≥ 0.3?
+            <div class="tooltip">Bifrontal horn width to cranial width ratio.</div>
+        </label>
+        <select name="evans">
+            <option value="" disabled selected>Select an option</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+        </select>
+
+        <label>DESH present?
+            <div class="tooltip">Disproportionate sulci on top and Sylvian fissure enlargement.</div>
+        </label>
+        <select name="desh">
+            <option value="" disabled selected>Select an option</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+        </select>
+
+        <label>Callosal angle &lt; 90°?
+            <div class="tooltip">Seen in coronal MRI through the posterior commissure.</div>
+        </label>
+        <select name="callosal">
+            <option value="" disabled selected>Select an option</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+        </select>
+
+        <button type="submit">📊 Calculate</button>
+    </form>
+
+    {% if score is not none %}
+    <div class="result">
+        <h2>🧮 Total Score: {{ score }}</h2>
+        <h3>📘 Interpretation: {{ interpretation }}</h3>
+    </div>
+    {% endif %}
+
+    {% if score is not none %}
+    <div class="result">
+        <h2>🧮 Total Score: {{ score }}</h2>
+        <h3>📘 Interpretation: {{ interpretation }}</h3>
+
+        <form method="POST" action="/download" target="_blank">
+            <input type="hidden" name="gait" value="{{ request.form.get('gait') }}">
+            <input type="hidden" name="urine" value="{{ request.form.get('urine') }}">
+            <input type="hidden" name="cognition" value="{{ request.form.get('cognition') }}">
+            <input type="hidden" name="evans" value="{{ request.form.get('evans') }}">
+            <input type="hidden" name="desh" value="{{ request.form.get('desh') }}">
+            <input type="hidden" name="tug" value="{{ request.form.get('tug') }}">
+            <input type="hidden" name="tap" value="{{ request.form.get('tap') }}">
+            <input type="hidden" name="callosal" value="{{ request.form.get('callosal') }}">
+
+            <button type="submit">📄 Download PDF Report</button>
+        </form>
+    </div>
+    {% endif %}
+
+
+</body>
+
+</html>

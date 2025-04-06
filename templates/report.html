@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 40px;
+            font-size: 16px;
+            color: #333;
+        }
+
+        h1 {
+            color: #003366;
+            font-size: 24px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .section {
+            margin-top: 25px;
+            padding: 20px;
+            border: 1px solid #ccddee;
+            border-radius: 8px;
+            background-color: #f5faff;
+        }
+
+        .label {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 8px;
+            color: #003366;
+        }
+
+        ul {
+            margin-top: 10px;
+            margin-left: 20px;
+        }
+
+        li {
+            margin-bottom: 5px;
+            font-size: 15px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🧠 HydroToolPro Diagnostic Report</h1>
+
+    <div class="section">
+        <p class="label">Total Score:</p>
+        <p>{{ score }}</p>
+    </div>
+
+    <div class="section">
+        <p class="label">Interpretation:</p>
+        <p>{{ interpretation }}</p>
+    </div>
+
+    <div class="section">
+        <p class="label">Patient Responses:</p>
+        <ul>
+            {% for question, answer in responses.items() %}
+            <li><strong>{{ question|capitalize }}:</strong> {{ answer }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div class="section">
+        <p class="label">🔗 Access this tool online:</p>
+        <img src="data:image/png;base64,{{ qr_base64 }}" style="width: 100px;" alt="QR Code to Tool" />
+    </div>
+
+
+
+</body>
+
+</html>
