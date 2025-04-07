@@ -23,8 +23,6 @@ def allowed_file(filename):
 
 @app.route("/upload-mri", methods=["GET", "POST"])
 def upload_mri():
-    @app.route("/upload-mri", methods=["GET", "POST"])
-def upload_mri():
     analysis_result = None
 
     if request.method == "POST":
@@ -34,7 +32,8 @@ def upload_mri():
             filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
             file.save(filepath)
 
-            analysis_result = analyze_mri_image(filepath)
+            # Stub for analysis (you can replace with actual later)
+            analysis_result = "Image uploaded and ready for analysis."
             flash("✅ MRI image uploaded successfully!", "success")
         else:
             flash("❌ Invalid file type. Please upload a .jpg or .png image.", "danger")
