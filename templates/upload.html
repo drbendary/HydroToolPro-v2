@@ -1,27 +1,118 @@
-<!-- templates/upload.html -->
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
-    <title>Upload MRI Image</title>
+    <title>Upload MRI for Analysis</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #1f2937;
+            font-size: 28px;
+            margin-bottom: 30px;
+        }
+
+        .mri-image {
+            display: block;
+            margin: 0 auto 30px;
+            width: 100%;
+            max-width: 500px;
+            border-radius: 8px;
+        }
+
+        form {
+            text-align: center;
+        }
+
+        input[type="file"] {
+            padding: 12px;
+            font-size: 16px;
+            border-radius: 6px;
+            border: 2px dashed #cbd5e0;
+            background-color: #f9fafb;
+            color: #4b5563;
+            cursor: pointer;
+            transition: 0.3s ease;
+        }
+
+        input[type="file"]:hover {
+            background-color: #e2e8f0;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px 24px;
+            font-size: 16px;
+            border: none;
+            border-radius: 6px;
+            background-color: #2563eb;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #1d4ed8;
+        }
+
+        .results {
+            margin-top: 30px;
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 6px;
+            white-space: pre-line;
+        }
+
+        .mac-tip {
+            font-size: 14px;
+            color: #6b7280;
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
 </head>
 
 <body>
-    <h2>Upload MRI Screenshot</h2>
-    <form method="POST" enctype="multipart/form-data">
-        <input type="file" name="image" accept=".png,.jpg,.jpeg" required>
-        <button type="submit">Upload</button>
-    </form>
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-    <ul>
-        {% for category, message in messages %}
-        <li><strong>{{ category }}:</strong> {{ message }}</li>
-        {% endfor %}
-    </ul>
-    {% endif %}
-    {% endwith %}
+    <div class="container">
+        <h1>Upload MRI Image or ZIP for Analysis</h1>
+
+        <img src="{{ url_for('static', filename='images/futuristic_mri_axial.png') }}" alt="MRI Sample"
+            class="mri-image">
+
+        <form method="POST" enctype="multipart/form-data">
+            <input type="file" name="image" accept=".jpg,.jpeg,.png,.dcm,.zip" required>
+            <br>
+            <button type="submit">Analyze MRI</button>
+        </form>
+
+        {% if result %}
+        <div class="results">
+            <strong>Analysis Result:</strong><br>
+            {{ result }}
+        </div>
+        {% endif %}
+
+        <div class="mac-tip">
+            💡 For Mac users: When selecting files, make sure to choose “All File Types” to see .zip or DICOM files.
+        </div>
+    </div>
 </body>
 
 </html>
