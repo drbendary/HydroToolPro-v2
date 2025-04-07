@@ -20,11 +20,11 @@
             border: 1px solid #fca5a5;
             color: #b91c1c;
             padding: 16px;
-            margin-bottom: 20px;
+            margin: 20px auto;
             max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
             font-weight: bold;
+            text-align: center;
+            border-radius: 8px;
         }
 
         .svg-container {
@@ -93,11 +93,13 @@
             Your browser does not support SVG
         </object>
 
+        <!-- Clean overlayed form -->
         <form method="POST" enctype="multipart/form-data" class="overlay-form">
             <input type="file" name="image" accept=".jpg,.jpeg,.png,.dcm,.zip" class="file-upload" required>
             <button type="submit" class="analyze-btn">Analyze MRI</button>
         </form>
     </div>
+
 </body>
 
 </html>
