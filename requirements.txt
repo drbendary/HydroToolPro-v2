@@ -39,3 +39,6 @@ xhtml2pdf==0.2.17
 gunicorn
 opencv-python==4.9.0.80
 numpy==1.26.4
+pydicom==2.4.4
+nibabel==5.2.0
+SimpleITK==2.3.1
