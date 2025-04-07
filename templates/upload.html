@@ -91,10 +91,11 @@
 
 <body>
     <div class="container">
-        <h1>Upload MRI Image or ZIP for Analysis</h1>
+        <h1>Upload MRI Image (DICOM or ZIP) for Analysis</h1>
 
         <img src="{{ url_for('static', filename='images/futuristic_mri_axial.png') }}" alt="MRI Sample"
             class="mri-image">
+
 
         <form method="POST" enctype="multipart/form-data">
             <input type="file" name="image" accept=".jpg,.jpeg,.png,.dcm,.zip" required>
