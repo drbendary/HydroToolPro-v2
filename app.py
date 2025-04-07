@@ -19,7 +19,9 @@ UPLOAD_FOLDER = "static/uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024
-ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "dcm", "zip"}
+
+# ✅ UPDATED extensions
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "zip", "dcm"}
 
 
 def allowed_file(filename):
