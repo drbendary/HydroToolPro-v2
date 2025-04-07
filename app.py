@@ -3,6 +3,10 @@ import qrcode
 import base64
 import numpy as np
 import cv2
+import zipfile
+import pydicom
+import SimpleITK as sitk
+import shutil
 from flask import Flask, render_template, request, make_response, redirect, url_for, flash
 from werkzeug.utils import secure_filename
 from xhtml2pdf import pisa
@@ -15,7 +19,7 @@ UPLOAD_FOLDER = "static/uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024
-ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "dcm", "zip"}
 
 
 def allowed_file(filename):
@@ -29,22 +33,17 @@ def analyze_mri_image(filepath):
             return "❌ Failed to read the image. Please check the file format."
 
         results = []
-
-        # Step 4 - Image info
         results.append(
             f"📐 Image loaded. Dimensions: {img.shape[1]}x{img.shape[0]} pixels")
 
-        # Step 5 - Simulated callosal angle
         angle = np.random.randint(40, 100)
         results.append(
             f"🧠 Callosal Angle: {angle}° — {'Normal' if angle >= 90 else 'Abnormal'}")
 
-        # Step 6 - Simulated Evans Index
         evans_index = round(np.random.uniform(0.25, 0.45), 2)
         results.append(
             f"🧪 Evans Index: {evans_index} — {'Suggestive of NPH' if evans_index >= 0.3 else 'Normal'}")
 
-        # Step 7 - Simulated DESH detection
         desh_detected = "yes" if "desh" in filepath.lower() else "no"
         if desh_detected == "yes":
             results.append(
@@ -69,10 +68,47 @@ def upload_mri():
             filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
             file.save(filepath)
 
-            analysis_result = analyze_mri_image(filepath)
-            flash("✅ MRI image uploaded successfully!", "success")
+            try:
+                if filename.endswith(".dcm"):
+                    ds = pydicom.dcmread(filepath)
+                    analysis_result = {
+                        "Modality": ds.Modality,
+                        "PatientID": ds.get("PatientID", "N/A"),
+                        "Image Shape": f"{ds.Rows}x{ds.Columns}"
+                    }
+
+                elif filename.endswith(".zip"):
+                    extract_dir = os.path.join(
+                        app.config["UPLOAD_FOLDER"], "extracted")
+                    os.makedirs(extract_dir, exist_ok=True)
+
+                    with zipfile.ZipFile(filepath, 'r') as zip_ref:
+                        zip_ref.extractall(extract_dir)
+
+                    reader = sitk.ImageSeriesReader()
+                    dicom_names = reader.GetGDCMSeriesFileNames(extract_dir)
+                    reader.SetFileNames(dicom_names)
+                    image = reader.Execute()
+
+                    analysis_result = {
+                        "3D Volume Shape": list(image.GetSize()),
+                        "Spacing": list(image.GetSpacing()),
+                        "DICOM Series": f"{len(dicom_names)} slices"
+                    }
+
+                    shutil.rmtree(extract_dir)
+
+                else:
+                    analysis_result = analyze_mri_image(filepath)
+
+                flash("✅ MRI data uploaded and read successfully.", "success")
+
+            except Exception as e:
+                flash(f"❌ Error reading file: {str(e)}", "danger")
+
         else:
-            flash("❌ Invalid file type. Please upload a .jpg or .png image.", "danger")
+            flash(
+                "❌ Invalid file type. Please upload a .jpg, .png, .dcm or .zip file.", "danger")
 
     return render_template("upload.html", result=analysis_result)
 
