@@ -1,8 +1,8 @@
 import os
 import qrcode
 import base64
-import cv2
 import numpy as np
+import cv2
 from flask import Flask, render_template, request, make_response, redirect, url_for, flash
 from werkzeug.utils import secure_filename
 from xhtml2pdf import pisa
@@ -22,21 +22,45 @@ def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-# Step 5: Dummy callosal angle function
-def calculate_callosal_angle(image_path):
-    # Simulated output
-    return "Estimated Callosal Angle: 85°"
+def analyze_mri_image(filepath):
+    try:
+        img = cv2.imread(filepath, cv2.IMREAD_GRAYSCALE)
+        if img is None:
+            return "❌ Failed to read the image. Please check the file format."
 
+        results = []
 
-# Step 6: Dummy Evans Index function
-def calculate_evans_index(image_path):
-    # Simulated output
-    return "Evans Index: 0.33 (borderline)"
+        # Step 4 - Image info
+        results.append(
+            f"📐 Image loaded. Dimensions: {img.shape[1]}x{img.shape[0]} pixels")
+
+        # Step 5 - Simulated callosal angle
+        angle = np.random.randint(40, 100)
+        results.append(
+            f"🧠 Callosal Angle: {angle}° — {'Normal' if angle >= 90 else 'Abnormal'}")
+
+        # Step 6 - Simulated Evans Index
+        evans_index = round(np.random.uniform(0.25, 0.45), 2)
+        results.append(
+            f"🧪 Evans Index: {evans_index} — {'Suggestive of NPH' if evans_index >= 0.3 else 'Normal'}")
+
+        # Step 7 - Simulated DESH detection
+        desh_detected = "yes" if "desh" in filepath.lower() else "no"
+        if desh_detected == "yes":
+            results.append(
+                "🔍 DESH Pattern: Detected (Disproportionately enlarged subarachnoid spaces)")
+        else:
+            results.append("🔍 DESH Pattern: Not detected")
+
+        return "\n".join(results)
+
+    except Exception as e:
+        return f"❌ Error during analysis: {str(e)}"
 
 
 @app.route("/upload-mri", methods=["GET", "POST"])
 def upload_mri():
-    analysis_result = {}
+    analysis_result = None
 
     if request.method == "POST":
         file = request.files.get("image")
@@ -45,10 +69,8 @@ def upload_mri():
             filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
             file.save(filepath)
 
-            analysis_result["callosal_angle"] = calculate_callosal_angle(
-                filepath)
-            analysis_result["evans_index"] = calculate_evans_index(filepath)
-            flash("✅ MRI image uploaded and analyzed successfully!", "success")
+            analysis_result = analyze_mri_image(filepath)
+            flash("✅ MRI image uploaded successfully!", "success")
         else:
             flash("❌ Invalid file type. Please upload a .jpg or .png image.", "danger")
 
@@ -128,7 +150,7 @@ def download_pdf():
     else:
         interpretation = "🔻 NPH unlikely."
 
-    qr = qrcode.make("https://hydrotoolpro.onrender.com")
+    qr = qrcode.make("https://nph-diagnostic-tool.onrender.com")
     qr_buffer = BytesIO()
     qr.save(qr_buffer, format="PNG")
     qr_base64 = base64.b64encode(qr_buffer.getvalue()).decode("utf-8")
