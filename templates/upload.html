@@ -15,6 +15,18 @@
             padding: 20px;
         }
 
+        .error {
+            background-color: #fee2e2;
+            border: 1px solid #fca5a5;
+            color: #b91c1c;
+            padding: 16px;
+            margin-bottom: 20px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            font-weight: bold;
+        }
+
         .svg-container {
             position: relative;
             width: 100%;
@@ -67,7 +79,14 @@
 </head>
 
 <body>
+
     <h1 style="text-align:center;">Upload Your MRI</h1>
+
+    {% if error %}
+    <div class="error">
+        {{ error }}
+    </div>
+    {% endif %}
 
     <div class="svg-container">
         <object type="image/svg+xml" data="{{ url_for('static', filename='images/robot_ui.svg') }}" class="svg-layout">
