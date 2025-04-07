@@ -13,6 +13,7 @@
             background-color: #f1f5f9;
             margin: 0;
             padding: 20px;
+            text-align: center;
         }
 
         .error {
@@ -27,26 +28,18 @@
             border-radius: 8px;
         }
 
-        .svg-container {
-            position: relative;
-            width: 100%;
-            max-width: 1000px;
-            margin: 0 auto;
+        .image-wrapper {
+            max-width: 800px;
+            margin: 0 auto 30px;
         }
 
-        .svg-layout {
+        .image-wrapper img {
             width: 100%;
-            height: auto;
-            display: block;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
 
-        .overlay-form {
-            position: absolute;
-            top: 58%;
-            /* Adjust as needed */
-            left: 22%;
-            /* Adjust as needed */
-            transform: translate(-50%, -50%);
+        .upload-form {
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -80,7 +73,7 @@
 
 <body>
 
-    <h1 style="text-align:center;">Upload Your MRI</h1>
+    <h1>Upload Your MRI</h1>
 
     {% if error %}
     <div class="error">
@@ -88,17 +81,14 @@
     </div>
     {% endif %}
 
-    <div class="svg-container">
-        <object type="image/svg+xml" data="{{ url_for('static', filename='images/robot_ui.svg') }}" class="svg-layout">
-            Your browser does not support SVG
-        </object>
-
-        <!-- Clean overlayed form -->
-        <form method="POST" enctype="multipart/form-data" class="overlay-form">
-            <input type="file" name="image" accept=".jpg,.jpeg,.png,.dcm,.zip" class="file-upload" required>
-            <button type="submit" class="analyze-btn">Analyze MRI</button>
-        </form>
+    <div class="image-wrapper">
+        <img src="{{ url_for('static', filename='images/futuristic_mri_axial.png') }}" alt="MRI Background">
     </div>
+
+    <form method="POST" enctype="multipart/form-data" class="upload-form">
+        <input type="file" name="image" accept=".jpg,.jpeg,.png,.dcm,.zip" class="file-upload" required>
+        <button type="submit" class="analyze-btn">Analyze MRI</button>
+    </form>
 
 </body>
 
