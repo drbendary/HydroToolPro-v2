@@ -1,10 +1,42 @@
+import os
 import qrcode
 import base64
-from flask import Flask, render_template, request, make_response
+from flask import Flask, render_template, request, make_response, redirect, url_for, flash
+from werkzeug.utils import secure_filename
 from xhtml2pdf import pisa
 from io import BytesIO
 
 app = Flask(__name__)
+app.secret_key = 'supersecretkey'
+
+# Setup upload folder
+UPLOAD_FOLDER = "static/uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024  # 10 MB limit
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
+
+
+def allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+@app.route("/upload-mri", methods=["GET", "POST"])
+def upload_mri():
+    if request.method == "POST":
+        file = request.files.get("image")
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+            file.save(filepath)
+
+            flash("✅ MRI image uploaded successfully!", "success")
+            return redirect(url_for("upload_mri"))
+
+        flash("❌ Invalid file type. Please upload a .jpg or .png image.", "danger")
+        return redirect(url_for("upload_mri"))
+
+    return render_template("upload.html")
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -80,15 +112,13 @@ def download_pdf():
     else:
         interpretation = "🔻 NPH unlikely."
 
-    # ✅ QR Code generation
-    # Update with final live URL if needed
     qr = qrcode.make("https://nph-diagnostic-tool.onrender.com")
     qr_buffer = BytesIO()
     qr.save(qr_buffer, format="PNG")
     qr_base64 = base64.b64encode(qr_buffer.getvalue()).decode("utf-8")
 
-    html = render_template("report.html", score=score,
-                           interpretation=interpretation, responses=responses, qr_base64=qr_base64)
+    html = render_template("report.html", score=score, interpretation=interpretation,
+                           responses=responses, qr_base64=qr_base64)
 
     pdf_buffer = BytesIO()
     pisa.CreatePDF(BytesIO(html.encode("utf-8")), dest=pdf_buffer)
@@ -98,5 +128,3 @@ def download_pdf():
     response.headers['Content-Type'] = 'application/pdf'
     response.headers['Content-Disposition'] = 'attachment; filename=HydroToolPro_Report.pdf'
     return response
-
-# ✅ No app.run() here — Render uses gunicorn to launch it
