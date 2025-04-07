@@ -19,7 +19,7 @@ app.secret_key = 'supersecretkey'
 UPLOAD_FOLDER = "static/uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # ensures folder is created
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024
+app.config["MAX_CONTENT_LENGTH"] = 300 * 1024 * 1024.  # 300 MB max
 
 # ✅ UPDATED extensions
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "zip", "dcm"}
@@ -60,7 +60,6 @@ def analyze_mri_image(filepath):
         return f"❌ Error during analysis: {str(e)}"
 
 
-@import zipfile
 @app.route('/upload-mri', methods=['GET', 'POST'])
 def upload_mri():
     error = None
