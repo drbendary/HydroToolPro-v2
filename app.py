@@ -72,6 +72,9 @@ def upload_mri():
             if not filename:
                 error = "No file selected"
             elif filename.endswith('.zip'):
+                # 👈 this creates the folder if it doesn't exist
+                os.makedirs('temp', exist_ok=True)
+
                 # Save temporarily
                 filepath = os.path.join('temp', filename)
                 file.save(filepath)
