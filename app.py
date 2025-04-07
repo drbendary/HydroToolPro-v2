@@ -23,18 +23,23 @@ def allowed_file(filename):
 
 @app.route("/upload-mri", methods=["GET", "POST"])
 def upload_mri():
+    @app.route("/upload-mri", methods=["GET", "POST"])
+def upload_mri():
+    analysis_result = None
+
     if request.method == "POST":
-    file = request.files.get("image")
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-        file.save(filepath)
+        file = request.files.get("image")
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+            file.save(filepath)
 
-        flash("✅ MRI image uploaded successfully!", "success")
-        return render_template("mri_results.html", filename=filename)
+            analysis_result = analyze_mri_image(filepath)
+            flash("✅ MRI image uploaded successfully!", "success")
+        else:
+            flash("❌ Invalid file type. Please upload a .jpg or .png image.", "danger")
 
-    flash("❌ Invalid file type. Please upload a .jpg or .png image.", "danger")
-    return redirect(url_for("upload_mri"))
+    return render_template("upload.html", result=analysis_result)
 
 
 @app.route("/", methods=["GET", "POST"])
