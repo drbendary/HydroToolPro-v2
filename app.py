@@ -91,10 +91,10 @@ def upload_mri():
                 return redirect('/results')  # or wherever
 
         except Exception as e:
-    import traceback
-    print("UPLOAD ERROR:", str(e))
-    traceback.print_exc()  # 👈 this line prints full stack trace to Render logs
-    error = "Something went wrong while uploading. Try again."
+            import traceback
+            print("UPLOAD ERROR:", str(e))
+            traceback.print_exc()  # 👈 this line prints full stack trace to Render logs
+            error = "Something went wrong while uploading. Try again."
 
     return render_template('upload.html', error=error)
 
