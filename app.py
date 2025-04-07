@@ -3,6 +3,7 @@ import base64
 from flask import Flask, render_template, request, make_response
 from xhtml2pdf import pisa
 from io import BytesIO
+
 app = Flask(__name__)
 
 
@@ -78,14 +79,14 @@ def download_pdf():
         interpretation = "🟡 Moderate suspicion. Consider more testing or follow-up"
     else:
         interpretation = "🔻 NPH unlikely."
-# ✅ QR Code generation
-    # Your future live app
+
+    # ✅ QR Code generation
+    # Update with final live URL if needed
     qr = qrcode.make("https://nph-diagnostic-tool.onrender.com")
     qr_buffer = BytesIO()
     qr.save(qr_buffer, format="PNG")
     qr_base64 = base64.b64encode(qr_buffer.getvalue()).decode("utf-8")
 
-    # ✅ Pass qr_base64 into the template
     html = render_template("report.html", score=score,
                            interpretation=interpretation, responses=responses, qr_base64=qr_base64)
 
@@ -97,18 +98,5 @@ def download_pdf():
     response.headers['Content-Type'] = 'application/pdf'
     response.headers['Content-Disposition'] = 'attachment; filename=HydroToolPro_Report.pdf'
     return response
-    html = render_template("report.html", score=score,
-                           interpretation=interpretation, responses=responses)
 
-    pdf_buffer = BytesIO()
-    pisa.CreatePDF(BytesIO(html.encode("utf-8")), dest=pdf_buffer)
-    pdf_buffer.seek(0)
-
-    response = make_response(pdf_buffer.read())
-    response.headers['Content-Type'] = 'application/pdf'
-    response.headers['Content-Disposition'] = 'attachment; filename=HydroToolPro_Report.pdf'
-    return response
-
-
-if __name__ == "__main__":
-    app.run(debug=True, port=5050)
+# ✅ No app.run() here — Render uses gunicorn to launch it
