@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
+    <meta charset="UTF-8">
     <title>Upload MRI for Analysis</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
     <style>
@@ -11,112 +11,123 @@
             background-color: #0f172a;
             margin: 0;
             padding: 0;
-            color: #e2e8f0;
+            color: #f8fafc;
         }
 
         .container {
             max-width: 1000px;
-            margin: 40px auto;
-            padding: 20px;
-            position: relative;
+            margin: 50px auto;
+            background: #1e293b;
+            border-radius: 16px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
-        .mri-wrapper {
-            position: relative;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+        .form-box {
+            max-width: 45%;
         }
 
-        .mri-image {
-            width: 100%;
-            display: block;
-            border-radius: 12px;
+        h1 {
+            font-size: 26px;
+            margin-bottom: 24px;
         }
 
-        .overlay-form {
-            position: absolute;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            text-align: center;
-            background-color: rgba(15, 23, 42, 0.75);
-            padding: 20px 30px;
-            border-radius: 12px;
-            backdrop-filter: blur(6px);
-            box-shadow: 0 6px 30px rgba(0, 0, 0, 0.3);
+        .upload-instructions {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
         }
 
-        .overlay-form input[type="file"] {
-            padding: 10px;
-            font-size: 14px;
+        .upload-instructions img {
+            width: 30px;
+            margin-right: 10px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        input[type="file"] {
+            padding: 12px;
+            font-size: 16px;
             border-radius: 6px;
-            border: 2px dashed #64748b;
+            border: 2px dashed #94a3b8;
             background-color: #f8fafc;
-            color: #0f172a;
+            color: #1e293b;
             cursor: pointer;
-            margin-bottom: 10px;
-            width: 100%;
+            margin-bottom: 20px;
         }
 
-        .overlay-form button {
-            padding: 10px 22px;
+        button {
+            padding: 12px 20px;
             font-size: 16px;
             border: none;
             border-radius: 6px;
-            background-color: #2563eb;
+            background-color: #3b82f6;
             color: white;
             cursor: pointer;
             transition: background-color 0.3s ease;
         }
 
-        .overlay-form button:hover {
-            background-color: #1d4ed8;
+        button:hover {
+            background-color: #2563eb;
+        }
+
+        .robot-image {
+            width: 45%;
+            max-width: 400px;
+        }
+
+        .mac-tip {
+            font-size: 14px;
+            color: #cbd5e1;
+            margin-top: 30px;
+            text-align: center;
         }
 
         .results {
             margin-top: 30px;
-            background: #1e293b;
+            background: #334155;
             padding: 20px;
-            border-radius: 8px;
+            border-radius: 6px;
             white-space: pre-line;
-            font-size: 15px;
-            line-height: 1.6;
-        }
-
-        .mac-tip {
-            font-size: 13px;
-            color: #94a3b8;
-            margin-top: 20px;
-            text-align: center;
         }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <div class="mri-wrapper">
-            <img src="{{ url_for('static', filename='images/futuristic_mri_axial.png') }}" alt="MRI Axial Slice"
-                class="mri-image" />
+        <div class="form-box">
+            <h1>Upload MRI Image or ZIP for Analysis</h1>
+            <div class="upload-instructions">
+                <img src="{{ url_for('static', filename='images/nph_brain.png') }}" alt="MRI Sample Icon">
+                <span>MRI Sample</span>
+            </div>
 
-            <form method="POST" enctype="multipart/form-data" class="overlay-form">
-                <input type="file" name="image" accept=".jpg,.jpeg,.png,.dcm,.zip" required />
-                <br />
+            <form method="POST" enctype="multipart/form-data">
+                <input type="file" name="image" accept=".jpg,.jpeg,.png,.dcm,.zip" required>
                 <button type="submit">Analyze MRI</button>
             </form>
+
+            {% if result %}
+            <div class="results">
+                <strong>Analysis Result:</strong><br>
+                {{ result }}
+            </div>
+            {% endif %}
         </div>
 
-        {% if result %}
-        <div class="results">
-            <strong>🧠 Analysis Result:</strong><br />
-            {{ result }}
-        </div>
-        {% endif %}
+        <img src="{{ url_for('static', filename='images/futuristic_mri_axial.png') }}" alt="Robot Examining MRI"
+            class="robot-image">
+    </div>
 
-        <div class="mac-tip">
-            💡 For Mac users: When selecting files, click the dropdown and choose “All File Types” to see .zip or DICOM
-            files.
-        </div>
+    <div class="mac-tip">
+        💡 For Mac users: When selecting files, click the dropdown and choose “All File Types” to see .zip or DICOM
+        files.
     </div>
 </body>
 
