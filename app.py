@@ -11,43 +11,32 @@ from io import BytesIO
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'
 
-# Setup upload folder
 UPLOAD_FOLDER = "static/uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024  # 10 MB limit
+app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
 
 
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# 🔍 Step 4: Basic MRI analysis logic (stubbed Evans Index estimation)
+
+# Step 5: Dummy callosal angle function
+def calculate_callosal_angle(image_path):
+    # Simulated output
+    return "Estimated Callosal Angle: 85°"
 
 
-def analyze_mri_image(image_path):
-    try:
-        img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-        if img is None:
-            return "❌ Failed to load image. Make sure it's a valid MRI file."
-
-        height, width = img.shape
-        evans_index = 0.32 + (np.random.rand() - 0.5) * \
-            0.1  # random value around 0.32 ±0.05
-
-        if evans_index > 0.3:
-            result = f"🧠 Evans Index = {evans_index:.2f} → Suggestive of Ventriculomegaly"
-        else:
-            result = f"🧠 Evans Index = {evans_index:.2f} → Normal"
-
-        return result
-    except Exception as e:
-        return f"❌ Error analyzing image: {str(e)}"
+# Step 6: Dummy Evans Index function
+def calculate_evans_index(image_path):
+    # Simulated output
+    return "Evans Index: 0.33 (borderline)"
 
 
 @app.route("/upload-mri", methods=["GET", "POST"])
 def upload_mri():
-    analysis_result = None
+    analysis_result = {}
 
     if request.method == "POST":
         file = request.files.get("image")
@@ -56,8 +45,10 @@ def upload_mri():
             filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
             file.save(filepath)
 
-            analysis_result = analyze_mri_image(filepath)
-            flash("✅ MRI image uploaded successfully!", "success")
+            analysis_result["callosal_angle"] = calculate_callosal_angle(
+                filepath)
+            analysis_result["evans_index"] = calculate_evans_index(filepath)
+            flash("✅ MRI image uploaded and analyzed successfully!", "success")
         else:
             flash("❌ Invalid file type. Please upload a .jpg or .png image.", "danger")
 
@@ -137,7 +128,7 @@ def download_pdf():
     else:
         interpretation = "🔻 NPH unlikely."
 
-    qr = qrcode.make("https://nph-diagnostic-tool.onrender.com")
+    qr = qrcode.make("https://hydrotoolpro.onrender.com")
     qr_buffer = BytesIO()
     qr.save(qr_buffer, format="PNG")
     qr_base64 = base64.b64encode(qr_buffer.getvalue()).decode("utf-8")
