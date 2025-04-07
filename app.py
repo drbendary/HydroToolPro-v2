@@ -1,3 +1,4 @@
+from flask import Flask, request, render_template, redirect, flash
 import os
 import qrcode
 import base64
@@ -16,7 +17,7 @@ app = Flask(__name__)
 app.secret_key = 'supersecretkey'
 
 UPLOAD_FOLDER = "static/uploads"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # ensures folder is created
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024
 
@@ -59,60 +60,42 @@ def analyze_mri_image(filepath):
         return f"❌ Error during analysis: {str(e)}"
 
 
-@app.route("/upload-mri", methods=["GET", "POST"])
+@import zipfile
+@app.route('/upload-mri', methods=['GET', 'POST'])
 def upload_mri():
-    analysis_result = None
+    error = None
 
-    if request.method == "POST":
-        file = request.files.get("image")
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-            file.save(filepath)
+    if request.method == 'POST':
+        try:
+            file = request.files['image']
+            filename = file.filename
 
-            try:
-                if filename.endswith(".dcm"):
-                    ds = pydicom.dcmread(filepath)
-                    analysis_result = {
-                        "Modality": ds.Modality,
-                        "PatientID": ds.get("PatientID", "N/A"),
-                        "Image Shape": f"{ds.Rows}x{ds.Columns}"
-                    }
+            if not filename:
+                error = "No file selected"
+            elif filename.endswith('.zip'):
+                # Save temporarily
+                filepath = os.path.join('temp', filename)
+                file.save(filepath)
 
-                elif filename.endswith(".zip"):
-                    extract_dir = os.path.join(
-                        app.config["UPLOAD_FOLDER"], "extracted")
-                    os.makedirs(extract_dir, exist_ok=True)
+                # Try to open the ZIP
+                with zipfile.ZipFile(filepath, 'r') as zip_ref:
+                    zip_ref.extractall('temp/unzipped')
 
-                    with zipfile.ZipFile(filepath, 'r') as zip_ref:
-                        zip_ref.extractall(extract_dir)
+                # Handle contents here...
+                os.remove(filepath)
 
-                    reader = sitk.ImageSeriesReader()
-                    dicom_names = reader.GetGDCMSeriesFileNames(extract_dir)
-                    reader.SetFileNames(dicom_names)
-                    image = reader.Execute()
+                return redirect('/results')  # or wherever
 
-                    analysis_result = {
-                        "3D Volume Shape": list(image.GetSize()),
-                        "Spacing": list(image.GetSpacing()),
-                        "DICOM Series": f"{len(dicom_names)} slices"
-                    }
+            else:
+                # Handle other image formats like .dcm, .jpg etc.
+                file.save(os.path.join('uploads', filename))
+                return redirect('/results')  # or wherever
 
-                    shutil.rmtree(extract_dir)
+        except Exception as e:
+            print("UPLOAD ERROR:", str(e))  # Log to server
+            error = "Something went wrong while uploading. Try again."
 
-                else:
-                    analysis_result = analyze_mri_image(filepath)
-
-                flash("✅ MRI data uploaded and read successfully.", "success")
-
-            except Exception as e:
-                flash(f"❌ Error reading file: {str(e)}", "danger")
-
-        else:
-            flash(
-                "❌ Invalid file type. Please upload a .jpg, .png, .dcm or .zip file.", "danger")
-
-    return render_template("upload.html", result=analysis_result)
+    return render_template('upload.html', error=error)
 
 
 @app.route("/", methods=["GET", "POST"])
