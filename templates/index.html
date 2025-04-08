@@ -174,30 +174,46 @@
 
         <label>Evans Index ≥ 0.3?
             <div class="tooltip">Bifrontal horn width to cranial width ratio.</div>
+            {% if evans_value %}
+            <span style="background-color: #d0eaff; padding: 5px 10px; border-radius: 5px; margin-left: 10px;">
+                Evans Index = {{ evans_value }}
+            </span>
+            {% endif %}
         </label>
         <select name="evans">
             <option value="" disabled selected>Select an option</option>
-            <option value="yes" {% if evans=='yes' %}selected{% endif %}>Yes</option>
-            <option value="no" {% if evans=='no' %}selected{% endif %}>No</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
         </select>
 
         <label>DESH present?
             <div class="tooltip">Disproportionate sulci on top and Sylvian fissure enlargement.</div>
+            {% if desh_detected %}
+            <span style="background-color: #d0eaff; padding: 5px 10px; border-radius: 5px; margin-left: 10px;">
+                DESH = {{ desh_detected }}
+            </span>
+            {% endif %}
         </label>
         <select name="desh">
             <option value="" disabled selected>Select an option</option>
-            <option value="yes" {% if desh=='yes' %}selected{% endif %}>Yes</option>
-            <option value="no" {% if desh=='no' %}selected{% endif %}>No</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
         </select>
 
         <label>Callosal angle &lt; 90°?
             <div class="tooltip">Seen in coronal MRI through the posterior commissure.</div>
+            {% if callosal_angle %}
+            <span style="background-color: #d0eaff; padding: 5px 10px; border-radius: 5px; margin-left: 10px;">
+                Angle = {{ callosal_angle }}°
+            </span>
+            {% endif %}
         </label>
         <select name="callosal">
             <option value="" disabled selected>Select an option</option>
-            <option value="yes" {% if callosal=='yes' %}selected{% endif %}>Yes</option>
-            <option value="no" {% if callosal=='no' %}selected{% endif %}>No</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
         </select>
+
 
         <button type="submit">📊 Calculate</button>
     </form>
