@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, redirect, flash
+from flask import Flask, request, render_template, redirect, flash, make_response, url_for
 import os
 import qrcode
 import base64
@@ -8,7 +8,6 @@ import zipfile
 import pydicom
 import SimpleITK as sitk
 import shutil
-from flask import Flask, render_template, request, make_response, redirect, url_for, flash
 from werkzeug.utils import secure_filename
 from xhtml2pdf import pisa
 from io import BytesIO
@@ -17,11 +16,10 @@ app = Flask(__name__)
 app.secret_key = 'supersecretkey'
 
 UPLOAD_FOLDER = "static/uploads"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)  # ensures folder is created
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-app.config["MAX_CONTENT_LENGTH"] = 300 * 1024 * 1024.  # 300 MB max
+app.config["MAX_CONTENT_LENGTH"] = 300 * 1024 * 1024  # 300 MB max
 
-# ✅ UPDATED extensions
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "zip", "dcm"}
 
 
@@ -60,6 +58,45 @@ def analyze_mri_image(filepath):
         return f"❌ Error during analysis: {str(e)}"
 
 
+# ✅ Real Evans Index Calculator
+def calculate_evans_index(dicom_path):
+    try:
+        ds = pydicom.dcmread(dicom_path)
+        img = ds.pixel_array.astype(np.float32)
+        img = cv2.normalize(img, None, 0, 255, cv2.NORM_MINMAX)
+        img = img.astype(np.uint8)
+
+        _, thresh = cv2.threshold(img, 50, 255, cv2.THRESH_BINARY)
+        contours, _ = cv2.findContours(
+            thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if not contours:
+            return None, "No contours found"
+
+        skull_contour = max(contours, key=cv2.contourArea)
+        x, y, w, h = cv2.boundingRect(skull_contour)
+        skull_width = w
+
+        vertical_mid = y + h // 2
+        horizontal_strip = img[vertical_mid-10:vertical_mid+10, :]
+        _, horn_thresh = cv2.threshold(
+            horizontal_strip, 50, 255, cv2.THRESH_BINARY)
+        horn_contours, _ = cv2.findContours(
+            horn_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if len(horn_contours) < 2:
+            return None, "Could not detect two frontal horns"
+
+        horn_contours = sorted(
+            horn_contours, key=cv2.contourArea, reverse=True)[:2]
+        horn_boxes = [cv2.boundingRect(c) for c in horn_contours]
+        horn_centers = [x + w // 2 for (x, y, w, h) in horn_boxes]
+        frontal_horn_width = abs(horn_centers[0] - horn_centers[1])
+        evans_index = frontal_horn_width / skull_width
+
+        return evans_index, None
+    except Exception as e:
+        return None, f"Error: {str(e)}"
+
+
 @app.route('/upload-mri', methods=['GET', 'POST'])
 def upload_mri():
     error = None
@@ -72,31 +109,43 @@ def upload_mri():
             if not filename:
                 error = "No file selected"
             elif filename.endswith('.zip'):
-                # 👈 this creates the folder if it doesn't exist
                 os.makedirs('temp', exist_ok=True)
-
-                # Save temporarily
                 filepath = os.path.join('temp', filename)
                 file.save(filepath)
 
-                # Try to open the ZIP
                 with zipfile.ZipFile(filepath, 'r') as zip_ref:
                     zip_ref.extractall('temp/unzipped')
 
-                # Handle contents here...
                 os.remove(filepath)
 
-                return redirect('/results')  # or wherever
+                dicom_file = None
+                for root, _, files in os.walk('temp/unzipped'):
+                    for f in files:
+                        if f.endswith('.dcm'):
+                            dicom_file = os.path.join(root, f)
+                            break
+
+                if dicom_file:
+                    evans, err = calculate_evans_index(dicom_file)
+                    if err:
+                        flash(f"❌ Evans Index analysis failed: {err}")
+                    else:
+                        flash(
+                            f"✅ Evans Index = {round(evans, 3)} — {'Suggestive of NPH' if evans > 0.3 else 'Normal'}")
+                else:
+                    flash("❌ No DICOM file found in the uploaded zip")
+
+                return redirect('/results')
 
             else:
-                # Handle other image formats like .dcm, .jpg etc.
                 file.save(os.path.join('uploads', filename))
-                return redirect('/results')  # or wherever
+                flash("✅ File uploaded (non-zip handling not yet implemented)")
+                return redirect('/results')
 
         except Exception as e:
             import traceback
             print("UPLOAD ERROR:", str(e))
-            traceback.print_exc()  # 👈 this line prints full stack trace to Render logs
+            traceback.print_exc()
             error = "Something went wrong while uploading. Try again."
 
     return render_template('upload.html', error=error)
@@ -187,12 +236,12 @@ def download_pdf():
     pisa.CreatePDF(BytesIO(html.encode("utf-8")), dest=pdf_buffer)
     pdf_buffer.seek(0)
 
-
-@app.route("/results")
-def results():
-    return "<h2>✅ MRI uploaded and processed successfully!</h2><p>(This is a placeholder until we build a proper results page)</p>"
-
     response = make_response(pdf_buffer.read())
     response.headers['Content-Type'] = 'application/pdf'
     response.headers['Content-Disposition'] = 'attachment; filename=HydroToolPro_Report.pdf'
     return response
+
+
+@app.route("/results")
+def results():
+    return "<h2>✅ MRI uploaded and processed successfully!</h2><p>(This is a placeholder until we build a proper results page)</p>"
