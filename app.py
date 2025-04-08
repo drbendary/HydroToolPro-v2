@@ -155,6 +155,10 @@ def index():
     desh = session.get("desh")
     callosal = session.get("callosal")
 
+    evans_value = session.get("evans_value")
+    desh_detected = session.get("desh_detected")
+    callosal_angle = session.get("callosal_angle")
+
     if request.method == "POST":
         gait = request.form.get("gait")
         urine = request.form.get("urine")
@@ -191,7 +195,10 @@ def index():
             interpretation = "🔻 NPH unlikely."
 
     return render_template("index.html", score=score, interpretation=interpretation,
-                           evans=evans, desh=desh, callosal=callosal)
+                           evans=evans, desh=desh, callosal=callosal,
+                           evans_value=evans_value,
+                           desh_detected=desh_detected,
+                           callosal_angle=callosal_angle)
 
 
 @app.route("/download", methods=["POST"])
@@ -243,5 +250,6 @@ def download_pdf():
 
 @app.route("/results")
 def results():
-    flash("✅ MRI analysis complete. You may review the pre-filled values below.")
+    if "evans_value" in session or "desh_detected" in session or "callosal_angle" in session:
+        flash("✅ MRI analysis complete. You may review the pre-filled values below.")
     return redirect("/")
