@@ -92,13 +92,31 @@
             border-left: 6px solid #0066cc;
             border-radius: 8px;
         }
+
+        .flash {
+            background: #fff4e5;
+            color: #663c00;
+            border-left: 6px solid #ffa726;
+            padding: 12px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
     </style>
 </head>
 
 <body>
     <h1>🧠 HydroToolPro v2+</h1>
-    <form method="POST">
 
+    <!-- ✅ Flash messages -->
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    {% for msg in messages %}
+    <div class="flash">{{ msg }}</div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <form method="POST">
         <div class="section-title">🩺 Clinical Assessment</div>
 
         <label>Gait disturbance?
@@ -147,7 +165,6 @@
         </select>
 
         <div class="section-title">🧲 Imaging Findings</div>
-        <!-- MRI Analysis Upload Button -->
         <div style="margin-bottom: 20px; text-align: center;">
             <a href="{{ url_for('upload_mri') }}"
                 style="padding: 12px 24px; background-color: #4CAF50; color: white; text-decoration: none; font-size: 16px; border-radius: 8px;">
@@ -160,8 +177,8 @@
         </label>
         <select name="evans">
             <option value="" disabled selected>Select an option</option>
-            <option value="yes">Yes</option>
-            <option value="no">No</option>
+            <option value="yes" {% if evans=='yes' %}selected{% endif %}>Yes</option>
+            <option value="no" {% if evans=='no' %}selected{% endif %}>No</option>
         </select>
 
         <label>DESH present?
@@ -169,8 +186,8 @@
         </label>
         <select name="desh">
             <option value="" disabled selected>Select an option</option>
-            <option value="yes">Yes</option>
-            <option value="no">No</option>
+            <option value="yes" {% if desh=='yes' %}selected{% endif %}>Yes</option>
+            <option value="no" {% if desh=='no' %}selected{% endif %}>No</option>
         </select>
 
         <label>Callosal angle &lt; 90°?
@@ -178,19 +195,12 @@
         </label>
         <select name="callosal">
             <option value="" disabled selected>Select an option</option>
-            <option value="yes">Yes</option>
-            <option value="no">No</option>
+            <option value="yes" {% if callosal=='yes' %}selected{% endif %}>Yes</option>
+            <option value="no" {% if callosal=='no' %}selected{% endif %}>No</option>
         </select>
 
         <button type="submit">📊 Calculate</button>
     </form>
-
-    {% if score is not none %}
-    <div class="result">
-        <h2>🧮 Total Score: {{ score }}</h2>
-        <h3>📘 Interpretation: {{ interpretation }}</h3>
-    </div>
-    {% endif %}
 
     {% if score is not none %}
     <div class="result">
@@ -201,18 +211,16 @@
             <input type="hidden" name="gait" value="{{ request.form.get('gait') }}">
             <input type="hidden" name="urine" value="{{ request.form.get('urine') }}">
             <input type="hidden" name="cognition" value="{{ request.form.get('cognition') }}">
-            <input type="hidden" name="evans" value="{{ request.form.get('evans') }}">
-            <input type="hidden" name="desh" value="{{ request.form.get('desh') }}">
+            <input type="hidden" name="evans" value="{{ request.form.get('evans', evans) }}">
+            <input type="hidden" name="desh" value="{{ request.form.get('desh', desh) }}">
             <input type="hidden" name="tug" value="{{ request.form.get('tug') }}">
             <input type="hidden" name="tap" value="{{ request.form.get('tap') }}">
-            <input type="hidden" name="callosal" value="{{ request.form.get('callosal') }}">
+            <input type="hidden" name="callosal" value="{{ request.form.get('callosal', callosal) }}">
 
             <button type="submit">📄 Download PDF Report</button>
         </form>
     </div>
     {% endif %}
-
-
 
 </body>
 
