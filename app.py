@@ -187,6 +187,11 @@ def download_pdf():
     pisa.CreatePDF(BytesIO(html.encode("utf-8")), dest=pdf_buffer)
     pdf_buffer.seek(0)
 
+
+@app.route("/results")
+def results():
+    return "<h2>✅ MRI uploaded and processed successfully!</h2><p>(This is a placeholder until we build a proper results page)</p>"
+
     response = make_response(pdf_buffer.read())
     response.headers['Content-Type'] = 'application/pdf'
     response.headers['Content-Disposition'] = 'attachment; filename=HydroToolPro_Report.pdf'
