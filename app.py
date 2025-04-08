@@ -11,6 +11,7 @@ import shutil
 from werkzeug.utils import secure_filename
 from xhtml2pdf import pisa
 from io import BytesIO
+from flask import session
 
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'
@@ -118,28 +119,19 @@ def upload_mri():
 
                 os.remove(filepath)
 
-                dicom_file = None
-                for root, _, files in os.walk('temp/unzipped'):
-                    for f in files:
-                        if f.endswith('.dcm'):
-                            dicom_file = os.path.join(root, f)
-                            break
+                # 👇 Call Evans Index calc
+                from app_utils import calculate_evans_index  # assuming it's in app_utils.py
+                evans = calculate_evans_index('temp/unzipped')
 
-                if dicom_file:
-                    evans, err = calculate_evans_index(dicom_file)
-                    if err:
-                        flash(f"❌ Evans Index analysis failed: {err}")
-                    else:
-                        flash(
-                            f"✅ Evans Index = {round(evans, 3)} — {'Suggestive of NPH' if evans > 0.3 else 'Normal'}")
-                else:
-                    flash("❌ No DICOM file found in the uploaded zip")
+                # 👇 Save to session
+                session['evans'] = 'yes' if evans >= 0.3 else 'no'
+                session['evans_value'] = round(evans, 2)
 
                 return redirect('/results')
 
             else:
                 file.save(os.path.join('uploads', filename))
-                flash("✅ File uploaded (non-zip handling not yet implemented)")
+                flash("✅ File uploaded, but only zip-based DICOM analysis is active.")
                 return redirect('/results')
 
         except Exception as e:
@@ -244,4 +236,12 @@ def download_pdf():
 
 @app.route("/results")
 def results():
-    return "<h2>✅ MRI uploaded and processed successfully!</h2><p>(This is a placeholder until we build a proper results page)</p>"
+    # Pull session values, default to 'no'
+    evans = session.get("evans", "no")
+    evans_value = session.get("evans_value", None)
+
+    flash(
+        f"✅ Auto-analysis complete: Evans Index = {evans_value} — {'Suggestive of NPH' if evans == 'yes' else 'Normal'}")
+
+    # Pre-fill index.html with results
+    return render_template("index.html", evans=evans)
