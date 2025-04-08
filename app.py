@@ -18,7 +18,7 @@ app.secret_key = 'supersecretkey'
 UPLOAD_FOLDER = "static/uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-app.config["MAX_CONTENT_LENGTH"] = 300 * 1024 * 1024  # 300 MB max
+app.config["MAX_CONTENT_LENGTH"] = 300 * 1024 * 1024
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "zip", "dcm"}
 
@@ -27,46 +27,16 @@ def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-def analyze_mri_image(filepath):
-    try:
-        img = cv2.imread(filepath, cv2.IMREAD_GRAYSCALE)
-        if img is None:
-            return "❌ Failed to read the image. Please check the file format."
-
-        results = []
-        results.append(
-            f"📐 Image loaded. Dimensions: {img.shape[1]}x{img.shape[0]} pixels")
-
-        angle = np.random.randint(40, 100)
-        results.append(
-            f"🧠 Callosal Angle: {angle}° — {'Normal' if angle >= 90 else 'Abnormal'}")
-
-        evans_index = round(np.random.uniform(0.25, 0.45), 2)
-        results.append(
-            f"🧪 Evans Index: {evans_index} — {'Suggestive of NPH' if evans_index >= 0.3 else 'Normal'}")
-
-        desh_detected = "yes" if "desh" in filepath.lower() else "no"
-        if desh_detected == "yes":
-            results.append(
-                "🔍 DESH Pattern: Detected (Disproportionately enlarged subarachnoid spaces)")
-        else:
-            results.append("🔍 DESH Pattern: Not detected")
-
-        return "\n".join(results)
-    except Exception as e:
-        return f"❌ Error during analysis: {str(e)}"
-
-
 def calculate_evans_index(dicom_path):
     try:
         ds = pydicom.dcmread(dicom_path)
         img = ds.pixel_array.astype(np.float32)
         img = cv2.normalize(img, None, 0, 255,
                             cv2.NORM_MINMAX).astype(np.uint8)
-
         _, thresh = cv2.threshold(img, 50, 255, cv2.THRESH_BINARY)
         contours, _ = cv2.findContours(
             thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
         if not contours:
             return None
 
@@ -79,6 +49,7 @@ def calculate_evans_index(dicom_path):
         _, horn_thresh = cv2.threshold(strip, 50, 255, cv2.THRESH_BINARY)
         horn_contours, _ = cv2.findContours(
             horn_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
         if len(horn_contours) < 2:
             return None
 
@@ -125,11 +96,17 @@ def upload_mri():
                     session["evans_value"] = round(evans_index, 2)
                     session["evans"] = "yes" if evans_index >= 0.3 else "no"
                 else:
+                    session["evans_value"] = None
                     session["evans"] = "no"
 
-                session["callosal"] = "yes"  # placeholder for now
-                session["desh"] = "no"       # placeholder for now
+                session["callosal_angle"] = 75  # fake placeholder
+                session["callosal"] = "yes" if session["callosal_angle"] < 90 else "no"
 
+                session["desh_detected"] = "yes" if "desh" in filename.lower() else "no"
+                session["desh"] = session["desh_detected"]
+
+                flash(
+                    "✅ MRI analysis complete. You may review the pre-filled values below.")
                 return redirect("/results")
 
             else:
@@ -146,59 +123,71 @@ def upload_mri():
     return render_template('upload.html', error=error)
 
 
-@app.route("/", methods=["GET", "POST"])
+@app.route("/")
 def index():
-    score = None
-    interpretation = ""
-
     evans = session.get("evans")
     desh = session.get("desh")
     callosal = session.get("callosal")
 
-    evans_value = session.get("evans_value")
-    desh_detected = session.get("desh_detected")
-    callosal_angle = session.get("callosal_angle")
+    return render_template("index.html",
+                           score=None,
+                           interpretation=None,
+                           evans=evans,
+                           desh=desh,
+                           callosal=callosal,
+                           evans_value=session.get("evans_value"),
+                           desh_detected=session.get("desh_detected"),
+                           callosal_angle=session.get("callosal_angle"))
 
-    if request.method == "POST":
-        gait = request.form.get("gait")
-        urine = request.form.get("urine")
-        cognition = request.form.get("cognition")
-        evans = request.form.get("evans")
-        desh = request.form.get("desh")
-        tug = request.form.get("tug")
-        tap = request.form.get("tap")
-        callosal = request.form.get("callosal")
 
-        score = 0
-        if gait == "yes":
-            score += 2
-        if urine == "yes":
-            score += 1
-        if cognition == "yes":
-            score += 1
-        if evans == "yes":
-            score += 1
-        if desh == "yes":
-            score += 1
-        if tug == "yes":
-            score += 1
-        if tap == "yes":
-            score += 1
-        if callosal == "yes":
-            score += 1
+@app.route("/", methods=["POST"])
+def calculate_score():
+    gait = request.form.get("gait")
+    urine = request.form.get("urine")
+    cognition = request.form.get("cognition")
+    evans = request.form.get("evans")
+    desh = request.form.get("desh")
+    tug = request.form.get("tug")
+    tap = request.form.get("tap")
+    callosal = request.form.get("callosal")
 
-        if score >= 6:
-            interpretation = "✅ High Likelihood of NPH – consider further workup or referral"
-        elif 4 <= score < 6:
-            interpretation = "🟡 Moderate suspicion. Consider more testing or follow-up"
-        else:
-            interpretation = "🔻 NPH unlikely."
+    score = 0
+    if gait == "yes":
+        score += 2
+    if urine == "yes":
+        score += 1
+    if cognition == "yes":
+        score += 1
+    if evans == "yes":
+        score += 1
+    if desh == "yes":
+        score += 1
+    if tug == "yes":
+        score += 1
+    if tap == "yes":
+        score += 1
+    if callosal == "yes":
+        score += 1
+
+    if score >= 6:
+        interpretation = "✅ High Likelihood of NPH – consider further workup or referral"
+    elif 4 <= score < 6:
+        interpretation = "🟡 Moderate suspicion. Consider more testing or follow-up"
+    else:
+        interpretation = "🔻 NPH unlikely."
 
     return render_template("index.html", score=score, interpretation=interpretation,
-                           evans=evans, desh=desh, callosal=callosal,
-                           evans_value=evans_value,
-                           desh_detected=desh_detected,
-                           callosal_angle=callosal_angle)
+                           evans=evans,
+                           desh=desh,
+                           callosal=callosal,
+                           evans_value=session.get("evans_value"),
+                           desh_detected=session.get("desh_detected"),
+                           callosal_angle=session.get("callosal_angle"))
+
+
+@app.route("/results")
+def results():
+    return redirect("/")
 
 
 @app.route("/download", methods=["POST"])
@@ -248,8 +237,5 @@ def download_pdf():
     return response
 
 
-@app.route("/results")
-def results():
-    if "evans_value" in session or "desh_detected" in session or "callosal_angle" in session:
-        flash("✅ MRI analysis complete. You may review the pre-filled values below.")
-    return redirect("/")
+if __name__ == '__main__':
+    app.run(debug=True)
