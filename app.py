@@ -122,7 +122,13 @@ def upload_mri():
                 # 👇 Call Evans Index calc
                 from app_utils import calculate_evans_index  # assuming it's in app_utils.py
                 evans = calculate_evans_index('temp/unzipped')
-
+                if evans is not None:
+                    session['evans'] = 'yes' if evans >= 0.3 else 'no'
+                    print(f"[✔] Evans Index calculated: {evans}")
+                else:
+                    session['evans'] = 'no'
+                    print(
+                        "[⚠] Evans Index could not be calculated — no valid DICOM found.")
                 # 👇 Save to session
                 session['evans'] = 'yes' if evans >= 0.3 else 'no'
                 session['evans_value'] = round(evans, 2)
